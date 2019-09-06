@@ -40,18 +40,22 @@ public class NotificationHelper {
     private Context context;
     private NotificationManager notificationManager;
 
-    public static synchronized void clearBuffer() {
-        transactionBuffer.clear();
-        transactionCount = 0;
+    public static void clearBuffer() {
+        synchronized (transactionBuffer) {
+            transactionBuffer.clear();
+            transactionCount = 0;
+        }
     }
 
-    private static synchronized void addToBuffer(HttpTransaction transaction) {
+    private static void addToBuffer(HttpTransaction transaction) {
         if (transaction.getStatus() == HttpTransaction.Status.Requested) {
             transactionCount++;
         }
-        transactionBuffer.put(transaction.getId(), transaction);
-        if (transactionBuffer.size() > BUFFER_SIZE) {
-            transactionBuffer.removeAt(0);
+        synchronized (transactionBuffer) {
+            transactionBuffer.put(transaction.getId(), transaction);
+            if (transactionBuffer.size() > BUFFER_SIZE) {
+                transactionBuffer.removeAt(0);
+            }
         }
     }
 
@@ -60,7 +64,7 @@ public class NotificationHelper {
         notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
-    public synchronized void show(HttpTransaction transaction) {
+    public void show(HttpTransaction transaction) {
         addToBuffer(transaction);
         if (!BaseChuckActivity.isInForeground()) {
             NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
@@ -71,23 +75,25 @@ public class NotificationHelper {
             NotificationCompat.InboxStyle inboxStyle =
                     new NotificationCompat.InboxStyle();
             int count = 0;
-            for (int i = transactionBuffer.size() - 1; i >= 0; i--) {
-                if (count < BUFFER_SIZE) {
-                    if (count == 0) {
-                        mBuilder.setContentText(transactionBuffer.valueAt(i).getNotificationText());
+            synchronized (transactionBuffer) {
+                for (int i = transactionBuffer.size() - 1; i >= 0; i--) {
+                    if (count < BUFFER_SIZE) {
+                        if (count == 0) {
+                            mBuilder.setContentText(transactionBuffer.valueAt(i).getNotificationText());
+                        }
+                        inboxStyle.addLine(transactionBuffer.valueAt(i).getNotificationText());
                     }
-                    inboxStyle.addLine(transactionBuffer.valueAt(i).getNotificationText());
+                    count++;
                 }
-                count++;
+                mBuilder.setAutoCancel(true);
+                mBuilder.setStyle(inboxStyle);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    mBuilder.setSubText(String.valueOf(transactionCount));
+                } else {
+                    mBuilder.setNumber(transactionCount);
+                }
+                mBuilder.addAction(getClearAction());
             }
-            mBuilder.setAutoCancel(true);
-            mBuilder.setStyle(inboxStyle);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                mBuilder.setSubText(String.valueOf(transactionCount));
-            } else {
-                mBuilder.setNumber(transactionCount);
-            }
-            mBuilder.addAction(getClearAction());
             notificationManager.notify(NOTIFICATION_ID, mBuilder.build());
         }
     }
