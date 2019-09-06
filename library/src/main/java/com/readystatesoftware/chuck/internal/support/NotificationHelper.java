@@ -34,7 +34,7 @@ public class NotificationHelper {
     private static final int NOTIFICATION_ID = 1138;
     private static final int BUFFER_SIZE = 10;
 
-    private static LongSparseArray<HttpTransaction> transactionBuffer = new LongSparseArray<>();
+    private static final LongSparseArray<HttpTransaction> transactionBuffer = new LongSparseArray<>();
     private static int transactionCount;
 
     private Context context;
@@ -48,10 +48,10 @@ public class NotificationHelper {
     }
 
     private static void addToBuffer(HttpTransaction transaction) {
-        if (transaction.getStatus() == HttpTransaction.Status.Requested) {
-            transactionCount++;
-        }
         synchronized (transactionBuffer) {
+            if (transaction.getStatus() == HttpTransaction.Status.Requested) {
+                transactionCount++;
+            }
             transactionBuffer.put(transaction.getId(), transaction);
             if (transactionBuffer.size() > BUFFER_SIZE) {
                 transactionBuffer.removeAt(0);
