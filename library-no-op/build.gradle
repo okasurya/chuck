@@ -15,3 +15,13 @@ dependencies {
 }
 
 apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
+
+
+project.ext {
+    artifactId = 'library'
+    groupId = 'com.readystatesoftware.chuck'
+    versionName = "1.0.4-alpha2"
+    artifactName ="library-no-op-release"
+}
+
+apply from: "$rootDir/publish.gradle"
