@@ -18,9 +18,9 @@ apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
 
 
 project.ext {
-    artifactId = 'library'
+    artifactId = 'library-no-op'
     groupId = 'com.readystatesoftware.chuck'
-    versionName = "1.0.4-alpha2"
+    versionName = "1.0.4-alpha3"
     artifactName ="library-no-op-release"
 }
 
